@@ -1,0 +1,50 @@
+- hosts: kube_master
+  gather_facts: no
+  tasks:
+  - name: Check if Kubernetes is already initialized
+    stat:
+      path: /etc/kubernetes/admin.conf
+    register: k8s_check
+
+  - name: Initialize the Kubernetes master node
+    command: kubeadm init --control-plane --apiserver-advertise-address={{ ansible_host }} --pod-network-cidr=192.168.0.0/16
+    when: not k8s_check.stat.exists
+    run_once: true
+
+  - name: Setup kubeconfig for the root user
+    command: "{{ item }}"
+    with_items:
+    - mkdir -p $HOME/.kube
+    - cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    - chown $(id -u):$(id -g) $HOME/.kube/config
+    become: yes
+
+  - name: Install network plugin (we are using Calico here)
+    command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+    become: yes
+    run_once: true
+
+- hosts: master_nodes
+  tasks:
+  - name: Generate kubeadm join command for control-plane
+    command: kubeadm token create --print-join-command
+    register: join_command
+    when: inventory_hostname == groups['master-nodes'][0]
+    changed_when: false
+    become: yes
+    run_once: true
+
+  - name: Save the join command to a file
+    copy:
+      content: "{{ join_command.stdout_lines[0] }} --apiserver-advertise-address {{ ansible_host }} --control-plane"
+      dest: "/tmp/join-command"
+      mode: 0600
+    become: yes
+    run_once: true
+
+- hosts: master-nodes
+  tasks:
+  - name: Join the other control-plane nodes
+    command: sh /tmp/join-command
+    become: yes
+    when: inventory_hostname != groups['master-nodes'][0]

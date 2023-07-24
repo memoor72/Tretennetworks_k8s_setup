@@ -1,0 +1,45 @@
+# Create-kubeconfig directory on Master Nodes
+- hosts: kube_control_plane
+  become: yes
+  roles:
+  - K8s_dependencies
+
+# Copy Kubeconfig to Worker nodes
+- hosts: kube_node
+  become: yes
+  roles:
+  - K8s_dependencies
+
+
+# Nfs Server Setup
+- hosts: nfs_storage
+  become: yes
+  roles:
+  - nfs_server_setup
+
+# Nfs Client Setup
+- hosts: nfs_clients
+  become: yes
+  roles:
+  - nfs_server_setup
+
+# mysql-playbook.yml
+- hosts: kube_mysql
+  become: yes
+  roles:
+  - mysql_server_deployment
+
+# Setup Mongodb Server & create user
+- hosts: kube_db
+  become: yes
+  roles:
+  - mongodb_server_setup
+
+
+# Setup monitoring & logging
+- hosts: kube_monitoring
+  become: yes
+  roles:
+  - deploy_monitoring_logging
+
+

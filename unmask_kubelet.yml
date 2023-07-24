@@ -1,0 +1,13 @@
+- hosts: k8s_nodes
+  become: yes
+  tasks:
+  - name: Unmask kubelet
+    systemd:
+      name: kubelet
+      masked: no
+
+  - name: Restart kubelet
+    systemd:
+      name: kubelet
+      state: restarted
+      daemon_reload: yes

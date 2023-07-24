@@ -1,0 +1,45 @@
+- name: Reinstall kubelet on Kubernetes nodes
+  hosts: k8s_nodes
+  become: yes
+  tasks:
+  - name: Remove held status on Kubernetes packages
+    command: apt-mark unhold kubelet kubeadm kubectl
+    changed_when: false
+    failed_when: false
+
+  - name: Purge kubelet, kubeadm and kubectl
+    apt:
+      name:
+      - kubelet
+      - kubeadm
+      - kubectl
+      state: absent
+      purge: yes
+      force_apt_get: yes
+    ignore_errors: true
+
+  - name: Add Kubernetes signing key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Add Kubernetes repository
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+      update_cache: yes
+
+  - name: Install kubelet, kubeadm and kubectl
+    apt:
+      name:
+      - kubelet
+      - kubeadm
+      - kubectl
+      state: present
+      update_cache: yes
+
+  - name: Enable and start kubelet service
+    systemd:
+      name: kubelet
+      enabled: yes
+      state: restarted

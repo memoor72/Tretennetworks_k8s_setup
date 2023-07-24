@@ -1,0 +1,95 @@
+# tasks file for metallb_setup
+
+- name: Check if python3-pip is installed
+  command: pip3 --version
+  register: pip3_check
+  ignore_errors: true
+
+- name: Install python3-pip if not present
+  apt:
+    name: python3-pip
+    state: present
+  become: yes
+  when: pip3_check.rc != 0
+
+- name: Install necessary python libraries
+  pip:
+    name: kubernetes
+    state: present
+  become: yes
+
+- name: Check if Helm is installed
+  shell: which helm
+  register: helm_check
+  ignore_errors: true
+
+- block:
+  - name: Get Helm script
+    get_url:
+      url: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
+      dest: "{{ helm_archive_path }}"
+
+  - name: Unpack Helm script
+    unarchive:
+      src: "{{ helm_archive_path }}"
+      dest: "{{ helm_unpack_dest }}"
+      remote_src: yes
+
+  - name: Move Helm binary to destination
+    command: mv "{{ helm_unpack_dest }}/linux-amd64/helm" "{{ helm_final_dest }}"
+    become: yes
+
+  - name: Remove temporary Helm files
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+    - "{{ helm_unpack_dest }}/linux-amd64"
+    - "{{ helm_archive_path }}"
+  become: yes
+  when: helm_check.rc != 0
+
+- name: Add Bitnami repo
+  command: helm repo add bitnami https://charts.bitnami.com/bitnami
+  register: helm_repo_add
+  until: helm_repo_add is succeeded
+  retries: 5
+  delay: 10
+  become: yes
+
+- name: Update Helm repositories
+  command: helm repo update
+  register: helm_repo_update
+  until: helm_repo_update is succeeded
+  retries: 5
+  delay: 10
+  become: yes
+
+- name: Create namespace metallb-system if it does not exist
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: metallb-system
+
+- name: Create MetalLB values file
+  copy:
+    content: "{{ helm_values }}"
+    dest: "/home/{{ ansible_user }}/metallb_values.yaml"
+  become: yes
+
+- name: Install MetalLB with increased timeout and custom values
+  command: helm install metallb bitnami/metallb -f "/home/{{ ansible_user }}/metallb_values.yaml" --namespace metallb-system --timeout 600s
+  register: helm_install
+  retries: 5
+  delay: 60
+  until: helm_install is succeeded
+  become: yes
+
+- name: Set secure permissions on kubeconfig
+  file:
+    path: "/root/.kube/config"
+    mode: '0600'
+  become: yes

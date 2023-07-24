@@ -1,0 +1,50 @@
+- hosts: kube_control_plane
+  become: yes
+  gather_facts: yes
+  tasks:
+  - name: Ensure required Python packages are installed
+    pip:
+      name:
+      - kubernetes
+      state: present
+
+  - name: Check if helm is installed
+    shell: helm version --short
+    register: helm_installed
+    ignore_errors: yes
+
+  - name: Install Helm
+    shell: |
+      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    when: helm_installed.rc != 0
+
+  - name: Add cert-manager Helm repository
+    shell: |
+      helm repo add jetstack https://charts.jetstack.io
+      helm repo update
+    args:
+      executable: /bin/bash
+
+  - name: Download cert-manager CRD definitions
+    get_url:
+      url: https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.crds.yaml
+      dest: /tmp/cert-manager.crds.yaml
+
+  - name: Install CustomResourceDefinitions for Cert-Manager
+    k8s:
+      state: present
+      src: /tmp/cert-manager.crds.yaml
+
+  - name: Create Namespace for Cert-Manager
+    k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: cert-manager
+
+  - name: Install or upgrade cert-manager Helm chart
+    shell: helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.6.1
+    args:
+      executable: /bin/bash

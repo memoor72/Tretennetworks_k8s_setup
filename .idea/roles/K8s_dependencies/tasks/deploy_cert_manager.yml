@@ -1,0 +1,27 @@
+- hosts: kube_control_plane
+  become: yes
+  gather_facts: yes
+  tasks:
+  - name: Add cert-manager Helm repository
+    shell: |
+      helm repo add jetstack https://charts.jetstack.io
+      helm repo update
+    args:
+      executable: /bin/bash
+
+  - name: Install CustomResourceDefinitions for Cert-Manager
+    command: kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.crds.yaml
+
+  - name: Create Namespace for Cert-Manager
+    k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: cert-manager
+
+  - name: Install cert-manager Helm chart
+    shell: helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.6.1
+    args:
+      executable: /bin/bash

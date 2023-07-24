@@ -1,0 +1,22 @@
+- name: Create MongoDB Users
+  hosts: kube_db
+  gather_facts: False
+  vars_files:
+  - group_vars.yml
+  tasks:
+
+  - name: Create MongoDB admin user
+    mongodb_user:
+      database: admin
+      name: admin
+      password: "{{ mongodb_password }}"
+      roles: root
+      state: present
+      login_host: localhost
+      login_port: 27017
+      login_database: admin
+      login_user: root
+      login_password: Mycompl3xp@$$w0rd
+      ssl: False
+    become: yes
+

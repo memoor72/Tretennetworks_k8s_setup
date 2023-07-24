@@ -1,0 +1,11 @@
+
+- name: Fetch kubeconfig from master node
+  hosts: master-node-0
+  gather_facts: no
+
+  tasks:
+  - name: Fetch kubeconfig file from master
+    fetch:
+      src: /etc/kubernetes/admin.conf
+      dest: "/Users/memoor/admin.conf"
+      flat: yes

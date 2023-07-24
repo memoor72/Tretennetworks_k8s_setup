@@ -1,0 +1,58 @@
+# Create Kubeconfig Directory
+- hosts: kube_control_plane
+  become: yes
+  roles:
+  - k8s_dependencies
+
+# Copy Kubeconfig to worker Nodes
+- hosts: kube_node
+  become: yes
+  roles:
+  - k8s_dependencies
+
+# Nfs Server Setup
+- hosts: nfs_node
+  become: yes
+  roles:
+  - nfs_server_setup
+
+# Nfs Client Setup
+- hosts: nfs_clients
+  become: yes
+  roles:
+  - nfs_client_setup
+
+# mysql-playbook.yml
+- hosts: mysql_server
+  vars_files:
+  - vars.yml
+  - group_vars.yml
+  become: yes
+  roles:
+  - mysql_server_deployment
+
+# Setup Mongodb Server & create user
+- hosts: kube_db
+  vars_files:
+  - group_vars.yml
+  become: yes
+  roles:
+  - mongodb_server_setup
+
+# Setup Metallb on K8s
+- hosts: loadbalancer
+  vars_files:
+  - group_vars.yml
+  become: yes
+  roles:
+  - metallb_setup
+
+
+# Setup monitoring & logging
+- hosts: kube_monitoring
+  become: yes
+  roles:
+  - deploy_monitoring_logging
+
+
+

@@ -1,0 +1,40 @@
+- hosts: kube_control_plane
+  become: yes
+  gather_facts: yes
+  tasks:
+  - name: Ensure required Python packages are installed
+    pip:
+      name:
+      - kubernetes
+      state: present
+
+  - name: Check if helm is installed
+    shell: helm version --short
+    register: helm_installed
+    ignore_errors: yes
+
+  - name: Install Helm
+    shell: |
+      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    when: helm_installed.rc != 0
+
+  - name: Add ingress-nginx Helm repository
+    shell: |
+      helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      helm repo update
+    args:
+      executable: /bin/bash
+
+  - name: Create Namespace for Ingress
+    k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: ingress-nginx
+
+  - name: Install Nginx Ingress controller using Helm
+    shell: helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx
+    args:
+      executable: /bin/bash

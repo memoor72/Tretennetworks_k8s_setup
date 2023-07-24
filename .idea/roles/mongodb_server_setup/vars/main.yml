@@ -1,0 +1,18 @@
+# vars file for mongodb_server_setup
+helm_version: "v3.7.0"
+helm_archive_path: "/tmp/helm-{{ helm_version }}-linux-amd64.tar.gz"
+helm_unpack_dest: "/tmp"
+helm_final_dest: "/usr/local/bin/helm"
+metallb_values_local_path: "/Users/memoor/Treten Kubernetes Project/Orchestrate_and_configure_HA_K8s_Cluster_Tretennetworks/Setup_and_Configure Ks8/playbooks/configs/metallb_value.yaml" # Update this to your local path
+metallb_values_dest: "/home/kube-master1/metallb_values.yaml"
+nfs_server_ip: 192.168.0.99
+nfs_exported_dir: "/srv/nfs"
+nfs_mount_point: "/mnt/mysql_data"
+mysql_root_password: "{{ vault_mysql_root_password }}"
+mysql_data_dir: "/mnt/data/mysql"
+mysql_config_file: "/etc/mysql/my.cnf"
+mongodb_password: "Mycompl3xp@$$w0rd"
+mongodb_version: 4.4
+mongodb_data_dir: /srv/nfs/mongo
+adminPassword: "prom-operator"
+

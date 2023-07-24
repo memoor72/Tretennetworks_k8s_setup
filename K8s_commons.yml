@@ -1,0 +1,32 @@
+- hosts: k8s_nodes
+  become: yes
+  tasks:
+  - name: Update apt package manager
+    apt:
+      update_cache: yes
+
+  - name: Upgrade all packages
+    apt:
+      upgrade: 'yes'
+
+  - name: Install necessary packages
+    apt:
+      name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      state: present
+
+  - name: Install Docker
+    include_role:
+      name: geerlingguy.docker
+
+  - name: Set net.bridge.bridge-nf-call-iptables to 1
+    sysctl:
+      name: net.bridge.bridge-nf-call-iptables
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes

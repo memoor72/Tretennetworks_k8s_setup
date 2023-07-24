@@ -1,0 +1,8 @@
+# tasks file for K8s_dependencies
+# tasks/main.yml
+- name: Create kube directory on Master nodes
+  include_tasks: create_kube_directory.yml
+
+- name: Copy Kubeconfig files to worker nodes
+  include_tasks: copy_kubeconfig_worker.yml
+

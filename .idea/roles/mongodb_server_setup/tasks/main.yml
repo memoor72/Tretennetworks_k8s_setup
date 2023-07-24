@@ -1,0 +1,10 @@
+# tasks/main.yml
+- name: Deploy MongoDB
+  include_tasks: setup_mongodb_server.yml
+
+- name: Pause for manual task
+  pause:
+    minutes: 5 # adjust this as per your need
+
+- name: Create MongoDB user
+  include_tasks: create_mongodb_user.yml

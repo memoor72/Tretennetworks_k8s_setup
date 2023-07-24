@@ -1,0 +1,95 @@
+# tasks file for mysql_server_deployment
+- name: Install and setup MySQL server
+  hosts: kube_mysql
+  vars_files:
+  - vars.yml
+  - group_vars.yml
+  become: yes
+
+  tasks:
+  - name: Install necessary software
+    apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+    loop:
+    - software-properties-common
+    - python3-pymysql
+    become: yes
+
+  - name: Add MySQL APT repository key
+    ansible.builtin.apt_key:
+      id: "{{ mysql_repository_key }}"
+      keyserver: keyserver.ubuntu.com
+
+  - name: Add MySQL APT repository
+    apt_repository:
+      repo: 'deb http://repo.mysql.com/apt/ubuntu/ bionic mysql-8.0'
+      state: present
+    become: yes
+
+  - name: Update and Upgrade APT packages
+    apt:
+      upgrade: dist
+      update_cache: yes
+    become: yes
+
+  - name: Install MySQL dependencies
+    apt:
+      name:
+      - libssl-dev
+      - mysql-community-client
+      - mysql-community-server-core
+      - mysql-server
+      state: present
+    become: yes
+
+  - name: Start MySQL service
+    systemd:
+      name: mysql
+      state: started
+      enabled: yes
+    become: yes
+
+  - name: Change MySQL root user password on first run and apply mysql_native_password
+    mysql_user:
+      login_user: root
+      login_password: ""
+      name: root
+      password: "{{ mysql_root_password }}"
+      host_all: yes
+      priv: "*.*:ALL,GRANT"
+      plugin: mysql_native_password
+    no_log: true
+    ignore_errors: yes
+
+  - name: Stop MySQL service before changing data directory
+    systemd:
+      name: mysql
+      state: stopped
+    become: yes
+
+  - name: Ensure MySQL data directory exists
+    file:
+      path: /mnt/data/mysql
+      state: directory
+    become: yes
+
+  - name: Mount NFS share on MySQL data directory
+    mount:
+      path: "/mnt/data"
+      src: "{{ nfs_server_ip }}:{{ nfs_exported_dir }}"
+      fstype: nfs
+      state: mounted
+    become: yes
+
+  - name: Change MySQL data directory in MySQL config
+    replace:
+      path: "{{ mysql_config_file }}"
+      regexp: 'datadir\s+=\s+/var/lib/mysql'
+      replace: "datadir = /mnt/data/mysql"
+    become: yes
+
+
+
+

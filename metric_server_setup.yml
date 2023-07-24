@@ -1,0 +1,50 @@
+- name: Install metrics-server using Helm
+  hosts: kube_master
+  tasks:
+
+  - name: Install Helm
+    get_url:
+      url: https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      dest: /tmp
+      mode: '755'
+    become: yes
+
+  - name: Extract tar in the current directory
+    unarchive:
+      src: /tmp/helm-v3.6.0-linux-amd64.tar.gz
+      dest: /tmp
+      remote_src: yes
+    become: yes
+
+  - name: Move helm executable to /usr/local/bin
+    command: mv /tmp/linux-amd64/helm /usr/local/bin/
+    become: yes
+
+  - name: Add bitnami repository and update Helm repo
+    command: bash -c "helm repo add bitnami https://charts.bitnami.com/bitnami && helm repo update"
+    delegate_to: localhost
+    become: no
+
+  - name: Create namespace for metrics-server
+    kubernetes.core.k8s:
+      kind: Namespace
+      name: metrics
+    delegate_to: localhost
+    become: no
+
+  - name: Install metrics-server
+    delegate_to: localhost
+    become: no
+    kubernetes.core.helm:
+      kube_context: kubernetes-admin@cluster.local
+      name: metrics-server
+      chart_ref: bitnami/metrics-server
+      release_namespace: kube-system
+      set_values:
+      - "apiService.create=true"
+
+
+
+
+
+

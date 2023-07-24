@@ -1,0 +1,24 @@
+- hosts: kube_control_plane
+  become: yes
+  gather_facts: yes
+  tasks:
+  - name: Add ingress-nginx Helm repository
+    shell: |
+      helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      helm repo update
+    args:
+      executable: /bin/bash
+
+  - name: Create Namespace for Ingress
+    k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: ingress-nginx
+
+  - name: Install Nginx Ingress controller using Helm
+    shell: helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx
+    args:
+      executable: /bin/bash

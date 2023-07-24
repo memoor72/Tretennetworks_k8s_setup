@@ -1,0 +1,58 @@
+localhost
+
+[kube_control_plane]
+kube-master1 ansible_host=192.168.0.82 ansible_user=kube-master1 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-master2 ansible_host=192.168.0.195 ansible_user=kube-master2 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-master3 ansible_host=192.168.0.171 ansible_user=kube-master3 ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[etcd]
+kube-master1
+kube-master2 
+kube-master3 
+
+[Nginx-Ingress]
+kube-master1
+kube-master2 
+kube-master3 
+
+[cert-manager]
+kube-master1
+kube-master2 
+kube-master3 
+
+
+[kube_node]
+kube-worker1 ansible_host=192.168.0.46 ansible_user=kube-worker1 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-worker2 ansible_host=192.168.0.127 ansible_user=kube-worker2 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-worker3 ansible_host=192.168.0.39 ansible_user=kube-worker3 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+
+[k8s_cluster:children]
+kube_node
+kube_control_plane
+
+[kube_db]
+mongodb-server ansible_host=192.168.0.55 ansible_user=mongodb-server ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+
+[nfs_storage]
+kube-nfs ansible_host=192.168.0.99 ansible_user=kube-nfs ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[kube_mysql]
+mysql-server ansible_host=192.168.0.203 ansible_user=mysql-server ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+
+[loadbalancer]
+kube-master1 ansible_host=192.168.0.82 ansible_user=kube-master1 ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[kube_monitoring]
+kube-master1 ansible_host=192.168.0.82 ansible_user=kube-master1 ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[nfs_clients]
+kube-master1 ansible_host=192.168.0.82 ansible_user=kube-master1 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-master2 ansible_host=192.168.0.195 ansible_user=kube-master2 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+kube-master3 ansible_host=192.168.0.171 ansible_user=kube-master3 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-worker1 ansible_host=192.168.0.46 ansible_user=kube-worker1 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-worker2 ansible_host=192.168.0.127 ansible_user=kube-worker2 ansible_ssh_private_key_file=~/.ssh/id_rsa
+kube-worker3 ansible_host=192.168.0.39 ansible_user=kube-worker3 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+mysql-server ansible_host=192.168.0.203 ansible_user=mysql-server ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+mongodb-server ansible_host=192.168.0.55 ansible_user=mongodb-server ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass=kubernetes
+
+

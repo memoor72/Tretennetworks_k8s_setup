@@ -1,0 +1,6 @@
+# handlers file for mysql_server_deployment
+- name: restart mysql
+  systemd:
+    name: mysql
+    state: restarted
+  become: true

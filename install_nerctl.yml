@@ -1,0 +1,29 @@
+- name: Download and install nerdctl
+  hosts: all
+  become: yes
+  vars:
+    nerdctl_version: "1.4.0"
+
+  tasks:
+  - name: Download nerdctl
+    get_url:
+      url: "https://github.com/containerd/nerdctl/releases/download/v{{ nerdctl_version }}/nerdctl-full-{{ nerdctl_version }}-linux-amd64.tar.gz"
+      dest: "/tmp/nerdctl-full-{{ nerdctl_version }}-linux-amd64.tar.gz"
+      mode: '0775'
+
+  - name: Extract nerdctl
+    unarchive:
+      src: "/tmp/nerdctl-full-{{ nerdctl_version }}-linux-amd64.tar.gz"
+      dest: "/usr/local/bin/"
+      remote_src: yes
+
+  - name: Move nerdctl to the appropriate directory
+    command: mv /usr/local/bin/bin/nerdctl /usr/local/bin/
+
+  - name: Check nerdctl version
+    command: nerdctl --version
+    register: nerdctl_version_output
+
+  - name: Print nerdctl version
+    debug:
+      msg: "{{ nerdctl_version_output.stdout }}"

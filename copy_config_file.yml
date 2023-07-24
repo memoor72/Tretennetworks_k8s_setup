@@ -1,0 +1,59 @@
+- name: Copy Kubeconfig files to worker nodes
+  hosts: kube_node
+  gather_facts: yes
+  vars:
+    master_node: master-node-0
+    kubeconfig_src: /etc/kubernetes/admin.conf
+    kubeconfig_dest: /root/.kube/config
+    tmp_kubeconfig: /tmp/admin.conf
+
+  tasks:
+  - name: Get kubeconfig from master node
+    fetch:
+      src: "{{ kubeconfig_src }}"
+      dest: "{{ tmp_kubeconfig }}"
+      flat: yes
+    become: yes
+    delegate_to: "{{ master_node }}"
+
+  - name: Ensure .kube directory exists
+    file:
+      path: "/root/.kube"
+      state: directory
+    become: yes
+
+  - name: Copy kubeconfig to worker nodes
+    copy:
+      src: "{{ tmp_kubeconfig }}"
+      dest: "{{ kubeconfig_dest }}"
+    become: yes
+
+  - name: Check if kubeconfig exists on worker nodes
+    stat:
+      path: "{{ kubeconfig_dest }}"
+    become: yes
+    register: kubeconfig_stat
+
+  - debug:
+      msg: "/root/.kube/config exists on the worker node."
+    when: kubeconfig_stat.stat.exists
+
+  - name: Ensure .kube directory exists in /home/{{ ansible_user }}
+    file:
+      path: "/home/{{ ansible_user }}/.kube"
+      state: directory
+    become: yes
+
+  - name: Copy kube config to /home/{{ ansible_user }}/.kube
+    copy:
+      src: "{{ tmp_kubeconfig }}"
+      dest: "/home/{{ ansible_user }}/.kube/config"
+    become: yes
+
+  - name: Set owner, group and permissions for kube config in /home/{{ ansible_user }}/.kube
+    file:
+      path: "/home/{{ ansible_user }}/.kube/config"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0644'
+    become: yes

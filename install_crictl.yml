@@ -1,0 +1,30 @@
+- hosts: k8s_nodes
+  become: yes
+  become_user: root
+  tasks:
+
+  - name: Update apt repository cache
+    apt:
+      update_cache: yes
+
+  - name: Install runc
+    apt:
+      name: runc
+      state: present
+
+  - name: Download crictl
+    get_url:
+      url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.26.0/crictl-v1.26.0-linux-amd64.tar.gz"
+      dest: "/tmp/crictl-v1.26.0-linux-amd64.tar.gz"
+      mode: '0644'
+
+  - name: Extract crictl to /usr/local/bin
+    unarchive:
+      src: "/tmp/crictl-v1.26.0-linux-amd64.tar.gz"
+      dest: "/usr/local/bin"
+      remote_src: yes
+
+  - name: Ensure crictl is executable
+    file:
+      path: /usr/local/bin/crictl
+      mode: '0755'

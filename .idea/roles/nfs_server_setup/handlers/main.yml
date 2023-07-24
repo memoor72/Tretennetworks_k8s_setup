@@ -1,0 +1,4 @@
+# handlers file for nfs_server_setup
+- name: Export NFS shares
+  command: exportfs -a
+  ignore_errors: yes

@@ -1,0 +1,51 @@
+- name: Create Directory and copy kubeconfig file
+  hosts: kube_control_plane
+  gather_facts: yes
+
+  tasks:
+
+  - name: Check if kubeconfig exists at /etc/kubernetes/admin.conf
+    stat:
+      path: /etc/kubernetes/admin.conf
+    become: yes
+    register: kubeconfig_stat
+
+  - name: Create /root/.kube directory
+    file:
+      path: /root/.kube
+      state: directory
+      mode: '0700'
+    become: yes
+    when: kubeconfig_stat.stat.exists
+
+  - name: Copy kubeconfig to /root/.kube/config
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: /root/.kube/config
+      mode: '0600'
+      remote_src: true
+    become: yes
+    when: kubeconfig_stat.stat.exists
+
+  - name: Ensure .kube directory exists in /home/{{ ansible_user }}
+    file:
+      path: "/home/{{ ansible_user }}/.kube"
+      state: directory
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0755'
+    become: yes
+    when: kubeconfig_stat.stat.exists
+
+  - name: Copy kube config to /home/{{ ansible_user }}/.kube
+    copy:
+      src: /root/.kube/config
+      dest: "/home/{{ ansible_user }}/.kube/config"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0644'
+      remote_src: yes
+    become: yes
+    when: kubeconfig_stat.stat.exists
+
+
